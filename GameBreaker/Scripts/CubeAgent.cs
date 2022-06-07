@@ -39,8 +39,8 @@ public class CubeAgent : Agent
         base.Initialize();
         gameArea = GetComponentInParent<GameArea>();
         goal = gameArea.goal;
-        sticky_1 = GameObject.Find("StickyCube_01");
-        sticky_2 = GameObject.Find("StickyCube_02");
+        sticky_1 = GameObject.Find("StickyCube_03");
+        sticky_2 = GameObject.Find("StickyCube_04");
         rigidbody = GetComponent<Rigidbody>();
         trail = GetComponent<TrailRenderer>();
     }
@@ -71,14 +71,14 @@ public class CubeAgent : Agent
         }
 
         // Apply a tiny negative reward every step to encourage action
-        MaxStep = 1000;
         if (MaxStep > 0) AddReward(-1f / MaxStep);
 
         // On time out update log
-        if (GetCumulativeReward() < -0.999f) UpdateLog();
+        if (StepCount == MaxStep) UpdateLog();    
 
         // Control trail renderer. If agent is about to timeout or reach goal turn off trail renderer
-        if (GetCumulativeReward() > -0.98f && GetCumulativeReward() < -0.001f && DistanceToObject(goal) > 1.5f && DistanceToObject(sticky_1) > 1.5f && DistanceToObject(sticky_2) > 1.5f) {
+        // if (GetCumulativeReward() > -0.98f && GetCumulativeReward() < -0.005f && DistanceToObject(goal) > 2.0f && DistanceToObject(sticky_1) > 2.0f && DistanceToObject(sticky_2) > 2.0f) {
+        if (StepCount > 1 && StepCount < MaxStep && DistanceToObject(goal) > 2.0f && DistanceToObject(sticky_1) > 2.0f && DistanceToObject(sticky_2) > 2.0f) {
             trail.emitting = true;
         }
         else {            
@@ -114,54 +114,21 @@ public class CubeAgent : Agent
     /// Behavior Type to "Heuristic Only" in the Behavior Parameters inspector.
     /// </summary>
     /// <returns>A vectorAction array of floats that will be passed into <see cref="AgentAction(float[])"/></returns>
-    // public override void Heuristic(in ActionBuffers actionsOut)
-    // {
-    //     int forwardAction = 0;
-    //     int turnAction = 0;
-    //     if (Input.GetKey(KeyCode.W))
-    //     {
-    //         // move forward
-    //         forwardAction = 1;
-    //     }
-    //     if (Input.GetKey(KeyCode.A))
-    //     {
-    //         // turn left
-    //         turnAction = 1;
-    //     }
-    //     else if (Input.GetKey(KeyCode.D))
-    //     {
-    //         // turn right
-    //         turnAction = 2;
-    //     }
-
-    //     // Put the actions into the array
-    //     actionsOut.DiscreteActions.Array[0] = forwardAction;
-    //     actionsOut.DiscreteActions.Array[1] = turnAction;
-    // }
-
-    /// <summary>
-    /// Randomly creates a list of actions.
-    /// Behavior Type to "Heuristic Only" in the Behavior Parameters inspector.
-    /// </summary>
-    /// <returns>A vectorAction array of floats that will be passed into <see cref="AgentAction(float[])"/></returns>
     public override void Heuristic(in ActionBuffers actionsOut)
     {
         int forwardAction = 0;
         int turnAction = 0;
-        
-        if (Random.Range(0, 2) == 0)
+        if (Input.GetKey(KeyCode.W))
         {
             // move forward
             forwardAction = 1;
         }
-
-        int randomTurnAction = Random.Range(0, 3);
-        if (randomTurnAction == 1)
+        if (Input.GetKey(KeyCode.A))
         {
             // turn left
             turnAction = 1;
         }
-        else if (randomTurnAction == 2)
+        else if (Input.GetKey(KeyCode.D))
         {
             // turn right
             turnAction = 2;
@@ -176,13 +143,12 @@ public class CubeAgent : Agent
     /// When a new episode begins, reset the agent and area
     /// </summary>
     public override void OnEpisodeBegin()
-    {    
+    {
         foundSticky_1 = false;
         foundSticky_2 = false;
         foundSecretWall_1 = false;
         foundSecretWall_2 = false;
-        gameArea.ResetArea();
-        
+        gameArea.ResetArea();        
     }
 
     /// <summary>
@@ -191,17 +157,24 @@ public class CubeAgent : Agent
     /// <param name="sensor">The vector sensor to add observations to</param>
     public override void CollectObservations(VectorSensor sensor)
     {
-
         // Distance to the goal (1 float = 1 value)
         sensor.AddObservation(DistanceToObject(goal));
 
         // Direction to goal (1 Vector3 = 3 values)
-        sensor.AddObservation((goal.transform.position - transform.position).normalized);
+        // sensor.AddObservation((goal.transform.position - transform.position).normalized);
 
         // Direction CubeAgent is facing (1 Vector3 = 3 values)
         sensor.AddObservation(transform.forward);
 
-        // 1 + 3 + 3 = 7 total values
+        // Target and Agent positions (2 Vector3 = 6 values)
+        // sensor.AddObservation(goal.transform.localPosition.normalized);
+        // sensor.AddObservation(transform.localPosition.normalized);
+
+        // Target and Agent x & z positions (2* x & z = 4 values)
+        sensor.AddObservation(goal.transform.localPosition.x);
+        sensor.AddObservation(goal.transform.localPosition.z);
+        sensor.AddObservation(transform.localPosition.x);
+        sensor.AddObservation(transform.localPosition.z);
     }
 
     /// <summary>
@@ -248,12 +221,12 @@ public class CubeAgent : Agent
 
     private void OnTriggerEnter(Collider other)
     {
-        if(other.gameObject.name == "FakeBarrier_01")
+        if(other.gameObject.name == "FakeBarrier_03")
         {
             foundSecretWall_1 = true;
         }
 
-        if(other.gameObject.name == "FakeBarrier_02")
+        if(other.gameObject.name == "FakeBarrier_04")
         {
             foundSecretWall_2 = true;
         }

@@ -16,7 +16,7 @@ public class GameArea : MonoBehaviour
     public TextMeshPro highScoreBoard;
     [Tooltip("The TextMeshPro text that shows the agent's total steps")]
     public TextMeshPro stepsBoard;
-    
+
     private Vector3 agentPosition;
     // private int agentStopCount = 0;
     
@@ -70,7 +70,7 @@ public class GameArea : MonoBehaviour
         Rigidbody rigidbody = cubeAgent.GetComponent<Rigidbody>();
         rigidbody.velocity = Vector3.zero;
         rigidbody.angularVelocity = Vector3.zero;
-        cubeAgent.transform.position = ChooseRandomPosition(transform.position, 150f, 210f, 10f, 15f) + Vector3.up * .5f;
+        cubeAgent.transform.position = ChooseRandomPosition(transform.position, 160f, 200f, 12f, 15f) + Vector3.up * 1f;
         cubeAgent.transform.rotation = Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f);
         agentPosition = cubeAgent.transform.position;        
     }
@@ -83,8 +83,8 @@ public class GameArea : MonoBehaviour
         Rigidbody rigidbody = goal.GetComponent<Rigidbody>();
         rigidbody.velocity = Vector3.zero;
         rigidbody.angularVelocity = Vector3.zero;
-        goal.transform.position = ChooseRandomPosition(transform.position, -30f, 30f, 8f, 12f) + Vector3.up * 1f;
-        goal.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+        goal.transform.position = ChooseRandomPosition(transform.position, -20f, 20f, 12f, 15f) + Vector3.up * 1f;
+        // goal.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
     }
 
     /// <summary>
@@ -103,14 +103,15 @@ public class GameArea : MonoBehaviour
     {
         // check every 360 frames if agent has moved
         // if(Time.frameCount % 360 == 0) IsAgentStuck(cubeAgent.transform.position);
+        // if(Time.frameCount % 60 == 0) Debug.Log(cubeAgent.transform.localPosition.x + ", " + cubeAgent.transform.localPosition.z);
         
         // Update the HUD
         scoreBoard.text = 
-            "Current\nEpisode: " + cubeAgent.CompletedEpisodes.ToString()
-            + "\nReward: " + cubeAgent.GetCumulativeReward().ToString("0.00");
+            "Current - Episode: " + cubeAgent.CompletedEpisodes.ToString()
+            + " Reward: " + cubeAgent.GetCumulativeReward().ToString("0.00");
         highScoreBoard.text = 
-            "High Score\nEpisode: " + cubeAgent.GetBestEpiside().ToString()
-            + "\nReward: " + cubeAgent.GetHighScore().ToString("0.00");
+            "High Score - Episode: " + cubeAgent.GetBestEpiside().ToString()
+            + " Reward: " + cubeAgent.GetHighScore().ToString("0.00");
         stepsBoard.text = 
             "Total Steps: " + cubeAgent.GetTotalSteps().ToString("#,0");
     }
