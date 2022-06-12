@@ -12,6 +12,8 @@ public class CubeAgent : Agent
     public float moveSpeed = 5f;
     [Tooltip("How fast the agent turns")]
     public float turnSpeed = 180f;
+    [Tooltip("Set level the agent is in")]
+    public int level = 2;
 
     private GameArea gameArea;
     new private Rigidbody rigidbody;
@@ -19,6 +21,8 @@ public class CubeAgent : Agent
     private GameObject goal;
     private GameObject sticky_1;
     private GameObject sticky_2;
+    private GameObject fakeBarrier_1;
+    private GameObject fakeBarrier_2;
     private bool isMoving = true;
     private float highScore = 0f;
     private int bestEpisode = 0;
@@ -28,7 +32,6 @@ public class CubeAgent : Agent
     private bool foundSecretWall_1 = false;
     private bool foundSecretWall_2 = false;
     private string filename = "/gamelog.txt";
-
     
 
     /// <summary>
@@ -38,9 +41,11 @@ public class CubeAgent : Agent
     {
         base.Initialize();
         gameArea = GetComponentInParent<GameArea>();
-        goal = gameArea.goal;
-        sticky_1 = GameObject.Find("StickyCube_03");
-        sticky_2 = GameObject.Find("StickyCube_04");
+        goal = gameArea.goal;        
+        sticky_1 = GameObject.Find("/Level_" + level + "/StickyCube_01");
+        sticky_2 = GameObject.Find("/Level_" + level + "/StickyCube_02");
+        fakeBarrier_1 = GameObject.Find("/Level_" + level + "/FakeBarrier_01");
+        fakeBarrier_2 = GameObject.Find("/Level_" + level + "/FakeBarrier_02");
         rigidbody = GetComponent<Rigidbody>();
         trail = GetComponent<TrailRenderer>();
     }
@@ -65,6 +70,7 @@ public class CubeAgent : Agent
             turnAmount = 1f;
         }
 
+        // Apply movement to agent unless disabled
         if (isMoving) {     
             rigidbody.MovePosition(transform.position + transform.forward * forwardAmount * moveSpeed * Time.fixedDeltaTime);
             transform.Rotate(transform.up * turnAmount * turnSpeed * Time.fixedDeltaTime);                      
@@ -78,7 +84,7 @@ public class CubeAgent : Agent
 
         // Control trail renderer. If agent is about to timeout or reach goal turn off trail renderer
         // if (GetCumulativeReward() > -0.98f && GetCumulativeReward() < -0.005f && DistanceToObject(goal) > 2.0f && DistanceToObject(sticky_1) > 2.0f && DistanceToObject(sticky_2) > 2.0f) {
-        if (StepCount > 1 && StepCount < MaxStep && DistanceToObject(goal) > 2.0f && DistanceToObject(sticky_1) > 2.0f && DistanceToObject(sticky_2) > 2.0f) {
+        if (StepCount > 1 && StepCount < MaxStep-1 && DistanceToObject(goal) > 2.0f && DistanceToObject(sticky_1) > 2.0f && DistanceToObject(sticky_2) > 2.0f) {
             trail.emitting = true;
         }
         else {            
@@ -86,6 +92,9 @@ public class CubeAgent : Agent
         }
     }
     
+    /// <summary>
+    /// Write episode stats to log file.
+    /// </summary>
     private void UpdateLog()
     {
         string logEntry = System.DateTime.Now 
@@ -96,13 +105,11 @@ public class CubeAgent : Agent
             + "," + foundSticky_2
             + "," + foundSecretWall_1
             + "," + foundSecretWall_2;
-        
         // Debug.Log(logEntry);        
         totalSteps += StepCount;
         
         using(System.IO.StreamWriter logFile = new System.IO.StreamWriter(Application.dataPath + "/../results" + filename, append: true))
         {
-            // Format: Current Datetime, Episode, steps, reward, found stick cube 1, found stick cube 2, found secret wall 1, found secret wall 2
             logFile.WriteLine(logEntry);
         }
 
@@ -164,17 +171,17 @@ public class CubeAgent : Agent
         // sensor.AddObservation((goal.transform.position - transform.position).normalized);
 
         // Direction CubeAgent is facing (1 Vector3 = 3 values)
-        sensor.AddObservation(transform.forward);
+        // sensor.AddObservation(transform.forward);
 
         // Target and Agent positions (2 Vector3 = 6 values)
-        // sensor.AddObservation(goal.transform.localPosition.normalized);
-        // sensor.AddObservation(transform.localPosition.normalized);
+        sensor.AddObservation(goal.transform.localPosition.normalized);
+        sensor.AddObservation(transform.localPosition.normalized);
 
         // Target and Agent x & z positions (2* x & z = 4 values)
-        sensor.AddObservation(goal.transform.localPosition.x);
-        sensor.AddObservation(goal.transform.localPosition.z);
-        sensor.AddObservation(transform.localPosition.x);
-        sensor.AddObservation(transform.localPosition.z);
+        // sensor.AddObservation(goal.transform.localPosition.x);
+        // sensor.AddObservation(goal.transform.localPosition.z);
+        // sensor.AddObservation(transform.localPosition.x);
+        // sensor.AddObservation(transform.localPosition.z);
     }
 
     /// <summary>
@@ -219,14 +226,18 @@ public class CubeAgent : Agent
 
     }
 
+    /// <summary>
+    /// When the agent enters a trigger, take action
+    /// </summary>
+    /// <param name="other">The triggr info</param>
     private void OnTriggerEnter(Collider other)
     {
-        if(other.gameObject.name == "FakeBarrier_03")
+        if(other.gameObject == fakeBarrier_1)
         {
             foundSecretWall_1 = true;
         }
 
-        if(other.gameObject.name == "FakeBarrier_04")
+        if(other.gameObject == fakeBarrier_2)
         {
             foundSecretWall_2 = true;
         }
@@ -251,11 +262,19 @@ public class CubeAgent : Agent
         return bestEpisode;
     }
 
+    /// <summary>
+    /// Retrieves the step count from prior episodes and current episodes.
+    /// </summary>
+    /// <returns>The agents total steps</returns>
     public int GetTotalSteps()
     {
         return totalSteps + StepCount;
     }
 
+    /// <summary>
+    /// Enable or disable agent's movement.
+    /// </summary>
+    /// <param name="state">Can agent move</param>
     public void setIsMoving(bool state)
     {
         isMoving = state;

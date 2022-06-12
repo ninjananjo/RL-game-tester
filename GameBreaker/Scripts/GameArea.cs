@@ -18,7 +18,6 @@ public class GameArea : MonoBehaviour
     public TextMeshPro stepsBoard;
 
     private Vector3 agentPosition;
-    // private int agentStopCount = 0;
     
 
     /// <summary>
@@ -108,14 +107,13 @@ public class GameArea : MonoBehaviour
         // Update the HUD
         scoreBoard.text = 
             "Current - Episode: " + cubeAgent.CompletedEpisodes.ToString()
-            + " Reward: " + cubeAgent.GetCumulativeReward().ToString("0.00");
+            + ". Reward: " + cubeAgent.GetCumulativeReward().ToString("0.00");
         highScoreBoard.text = 
             "High Score - Episode: " + cubeAgent.GetBestEpiside().ToString()
-            + " Reward: " + cubeAgent.GetHighScore().ToString("0.00");
+            + ". Reward: " + cubeAgent.GetHighScore().ToString("0.00");
         stepsBoard.text = 
             "Total Steps: " + cubeAgent.GetTotalSteps().ToString("#,0");
     }
-
 
     /// <summary>
     /// Check if agent has moved from last position
@@ -124,7 +122,6 @@ public class GameArea : MonoBehaviour
     // {
     //     if(Vector3.Distance(agentPosition, agentNewPosition) < 0.1)
     //     {
-    //         agentStopCount++;
     //         Debug.Log("Agent not moving");
     //     }
     //     agentPosition = agentNewPosition;        
